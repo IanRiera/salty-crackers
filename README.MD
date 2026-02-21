@@ -3,3 +3,4 @@ This game is a test of the capacities of the new AI tools for programming, and a
 
 ## Release v0
 The first release of the game is a simple platformer where the player controls a character that can jump and move left and right. The objective is to collect all the crackers scattered throughout the level while avoiding obstacles.
+- [v0 - First playable prototype](./v0/README.md)
