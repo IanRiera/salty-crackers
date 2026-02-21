@@ -18,6 +18,36 @@ const controls = {
   ArrowUp: false,
 };
 
+const touchButtons = document.querySelectorAll("[data-control]");
+
+function setControlState(control, isDown) {
+  if (!(control in controls)) return;
+  controls[control] = isDown;
+}
+
+function bindTouchControls() {
+  for (const button of touchButtons) {
+    const control = button.dataset.control;
+
+    const press = (event) => {
+      event.preventDefault();
+      setControlState(control, true);
+      button.classList.add("is-active");
+    };
+
+    const release = (event) => {
+      event.preventDefault();
+      setControlState(control, false);
+      button.classList.remove("is-active");
+    };
+
+    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("pointerleave", release);
+  }
+}
+
 const game = {
   totalLevels: 9,
   level: 1,
@@ -337,18 +367,25 @@ function gameLoop(time) {
 
 window.addEventListener("keydown", (event) => {
   if (event.key in controls) {
-    controls[event.key] = true;
+    setControlState(event.key, true);
     event.preventDefault();
   }
 });
 
 window.addEventListener("keyup", (event) => {
   if (event.key in controls) {
-    controls[event.key] = false;
+    setControlState(event.key, false);
     event.preventDefault();
   }
 });
 
+window.addEventListener("blur", () => {
+  setControlState("ArrowLeft", false);
+  setControlState("ArrowRight", false);
+  setControlState("ArrowUp", false);
+});
+
+bindTouchControls();
 createLevel(game.level);
 updateHUD();
 requestAnimationFrame(gameLoop);

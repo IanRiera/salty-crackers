@@ -43,6 +43,34 @@ canvas {
   display: block;
 }
 
+.touch-controls {
+  margin-top: 0.65rem;
+  display: none;
+  grid-template-columns: repeat(3, minmax(72px, 1fr));
+  gap: 0.55rem;
+}
+
+.touch-btn {
+  border: 2px solid #8f5627;
+  border-radius: 12px;
+  padding: 0.65rem 0.8rem;
+  min-height: 48px;
+  font: 700 0.98rem "Trebuchet MS", "Verdana", sans-serif;
+  color: #3a220f;
+  background: #fff5e6;
+  touch-action: manipulation;
+}
+
+.touch-btn:active,
+.touch-btn.is-active {
+  transform: translateY(1px);
+  background: #ffe3bd;
+}
+
+.touch-btn-jump {
+  background: #ffd9b0;
+}
+
 .hud {
   margin-top: 0.55rem;
   background: var(--panel);
@@ -56,11 +84,28 @@ canvas {
 }
 
 @media (max-width: 720px) {
+  body {
+    align-items: start;
+  }
+
+  .app {
+    padding: 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
   .subtitle {
     font-size: 0.95rem;
   }
 
+  .touch-controls {
+    display: grid;
+  }
+
   .hud {
     font-size: 0.9rem;
+    gap: 0.5rem;
   }
 }
