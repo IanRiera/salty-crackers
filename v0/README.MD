@@ -13,9 +13,14 @@ You play as a pregnant woman collecting salty crackers (`galletitas saladas`) ac
 
 ## Controls
 
-- `Arrow Left`: Move left
-- `Arrow Right`: Move right
-- `Arrow Up`: Jump
+- Desktop:
+  - `Arrow Left`: Move left
+  - `Arrow Right`: Move right
+  - `Arrow Up`: Jump
+- Phone:
+  - `Left` button: Move left
+  - `Right` button: Move right
+  - `Jump` button: Jump
 
 ## Gameplay Rules
 
@@ -35,4 +40,3 @@ You play as a pregnant woman collecting salty crackers (`galletitas saladas`) ac
 - `index.html`
 - `style.css`
 - `game.js`
-
