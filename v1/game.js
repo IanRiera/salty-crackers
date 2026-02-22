@@ -68,10 +68,14 @@ const player = {
   h: 64,
   vx: 0,
   vy: 0,
+  baseSpeed: 0.85,
+  baseJumpPower: 12,
   speed: 0.85,
   jumpPower: 12,
   onGround: false,
   facing: 1,
+  jumpsRemaining: 2,
+  maxJumps: 2,
 };
 
 let platforms = [];
@@ -161,11 +165,17 @@ function crackersTargetSafe(value) {
 function updateHUD() {
   levelText.textContent = `Level ${Math.min(game.level, game.totalLevels)} / ${game.totalLevels}`;
   crackersText.textContent = `Crackers: ${game.crackersCollected} / ${game.crackersTarget}`;
-  const growth = (1 + (Math.min(game.level, game.totalLevels) - 1) * 0.16).toFixed(2);
+  const growthValue = 1 + (Math.min(game.level, game.totalLevels) - 1) * 0.16;
+  const growth = growthValue.toFixed(2);
   const seconds = formatSeconds(game.levelElapsedMs);
   const best = game.bestTimes[game.level - 1];
   const bestText = best ? `${formatSeconds(best)}s` : "--";
   statusText.textContent = `Time: ${seconds}s · Best: ${bestText} · Belly Growth: ${growth}x`;
+
+  const speedScale = Math.max(0.55, 1.1 - (growthValue - 1) * 0.55);
+  const jumpScale = Math.max(0.72, 1.0 - (growthValue - 1) * 0.55);
+  player.speed = player.baseSpeed * speedScale;
+  player.jumpPower = player.baseJumpPower * jumpScale;
 }
 
 function handleInput() {
@@ -176,10 +186,6 @@ function handleInput() {
   if (controls.ArrowRight) {
     player.vx += player.speed;
     player.facing = 1;
-  }
-  if (controls.ArrowUp && player.onGround) {
-    player.vy = -player.jumpPower;
-    player.onGround = false;
   }
 }
 
@@ -209,6 +215,7 @@ function applyPhysics() {
       player.y = p.y - player.h;
       player.vy = 0;
       player.onGround = true;
+      player.jumpsRemaining = player.maxJumps;
     }
   }
 
@@ -429,6 +436,12 @@ window.addEventListener("keydown", (event) => {
   if (event.key in controls) {
     setControlState(event.key, true);
     event.preventDefault();
+  }
+
+  if (event.key === "ArrowUp" && player.jumpsRemaining > 0) {
+    player.vy = -player.jumpPower;
+    player.onGround = false;
+    player.jumpsRemaining -= 1;
   }
 });
 
