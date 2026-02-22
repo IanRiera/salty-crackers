@@ -4,6 +4,7 @@ const ctx = canvas.getContext("2d");
 const levelText = document.getElementById("levelText");
 const crackersText = document.getElementById("crackersText");
 const statusText = document.getElementById("statusText");
+const staminaBar = document.getElementById("staminaBar");
 
 const world = {
   gravity: 0.55,
@@ -32,6 +33,9 @@ function bindTouchControls() {
     const press = (event) => {
       event.preventDefault();
       setControlState(control, true);
+      if (control === "ArrowUp") {
+        tryJump();
+      }
       button.classList.add("is-active");
     };
 
@@ -76,6 +80,9 @@ const player = {
   facing: 1,
   jumpsRemaining: 2,
   maxJumps: 2,
+  stamina: 100,
+  staminaMax: 100,
+  exhausted: false,
 };
 
 let platforms = [];
@@ -126,6 +133,9 @@ function createLevel(level) {
   player.y = 90;
   player.vx = 0;
   player.vy = 0;
+  player.jumpsRemaining = player.maxJumps;
+  player.exhausted = false;
+  player.stamina = player.staminaMax;
 
   game.levelStartMs = 0;
   game.levelElapsedMs = 0;
@@ -171,6 +181,10 @@ function updateHUD() {
   const best = game.bestTimes[game.level - 1];
   const bestText = best ? `${formatSeconds(best)}s` : "--";
   statusText.textContent = `Time: ${seconds}s · Best: ${bestText} · Belly Growth: ${growth}x`;
+  if (staminaBar) {
+    const ratio = player.stamina / player.staminaMax;
+    staminaBar.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+  }
 
   const speedScale = Math.max(0.55, 1.1 - (growthValue - 1) * 0.55);
   const jumpScale = Math.max(0.72, 1.0 - (growthValue - 1) * 0.55);
@@ -178,7 +192,24 @@ function updateHUD() {
   player.jumpPower = player.baseJumpPower * jumpScale;
 }
 
+function tryJump() {
+  if (player.exhausted) return;
+  if (player.jumpsRemaining <= 0) return;
+  const jumpIndex = player.maxJumps - player.jumpsRemaining + 1;
+  const baseCost = 10;
+  const cost = jumpIndex >= 2 ? baseCost * 2 : baseCost;
+  if (player.stamina < cost) return;
+  player.stamina = Math.max(0, player.stamina - cost);
+  player.vy = -player.jumpPower;
+  player.onGround = false;
+  player.jumpsRemaining -= 1;
+  if (player.stamina <= 0) {
+    player.exhausted = true;
+  }
+}
+
 function handleInput() {
+  if (player.exhausted) return;
   if (controls.ArrowLeft) {
     player.vx -= player.speed;
     player.facing = -1;
@@ -186,6 +217,31 @@ function handleInput() {
   if (controls.ArrowRight) {
     player.vx += player.speed;
     player.facing = 1;
+  }
+}
+
+function updateStamina(deltaMs) {
+  const delta = deltaMs / 1000;
+  const moving = controls.ArrowLeft || controls.ArrowRight;
+  const drainRate = 12;
+  const recoverRate = 10;
+  const exhaustedRecoverRate = 18;
+
+  if (!player.exhausted && moving) {
+    player.stamina = Math.max(0, player.stamina - drainRate * delta);
+  } else {
+    const rate = player.exhausted ? exhaustedRecoverRate : recoverRate;
+    player.stamina = Math.min(player.staminaMax, player.stamina + rate * delta);
+  }
+
+  if (!player.exhausted && player.stamina <= 0) {
+    player.exhausted = true;
+  }
+  if (player.exhausted && player.stamina >= player.staminaMax) {
+    player.exhausted = false;
+  }
+  if (player.exhausted) {
+    player.vx = 0;
   }
 }
 
@@ -235,6 +291,7 @@ function collectCrackers(time) {
     if (collision) {
       cracker.collected = true;
       game.crackersCollected += 1;
+      player.stamina = Math.min(player.staminaMax, player.stamina + 25);
     }
 
     cracker.bob = Math.sin(time * 0.004 + cracker.bobOffset) * 2.5;
@@ -301,7 +358,7 @@ function drawPlayer() {
   ctx.fillStyle = "#543426";
   ctx.fillRect(player.x + 9, player.y + 20, 12, 22);
 
-  ctx.fillStyle = "#f2bb9c";
+  ctx.fillStyle = player.exhausted ? "#a7d8b8" : "#f2bb9c";
   ctx.beginPath();
   ctx.arc(centerX, headY, 10, 0, Math.PI * 2);
   ctx.fill();
@@ -421,6 +478,7 @@ function gameLoop(time) {
     if (game.transitionTimer <= 0) {
       game.levelElapsedMs += delta;
     }
+    updateStamina(delta);
     handleInput();
     applyPhysics();
     collectCrackers(time);
@@ -438,10 +496,8 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
   }
 
-  if (event.key === "ArrowUp" && player.jumpsRemaining > 0) {
-    player.vy = -player.jumpPower;
-    player.onGround = false;
-    player.jumpsRemaining -= 1;
+  if (event.key === "ArrowUp") {
+    tryJump();
   }
 });
 
