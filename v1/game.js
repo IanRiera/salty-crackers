@@ -1,6 +1,8 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+const DEBUG_SHOW_FINISH = false;
+
 const levelText = document.getElementById("levelText");
 const crackersText = document.getElementById("crackersText");
 const coinsValue = document.getElementById("coinsValue");
@@ -526,36 +528,131 @@ function drawCracker(cracker) {
 
 function drawPlayer() {
   const growth = 1 + (Math.min(game.level, game.totalLevels) - 1) * 0.16;
-  const bellyRadius = 12 * growth;
-
+  const bellyRadius = 3 + (growth - 1) * 12;
   const centerX = player.x + player.w / 2;
   const headY = player.y + 12;
+  const faceTone = player.exhausted ? "#a7d8b8" : "#f2bb9c";
+  const dressBase = "#f56f85";
+  const dressDark = "#d65a73";
+  const dressLight = "#f58a9f";
 
-  ctx.fillStyle = "#543426";
-  ctx.fillRect(player.x + 9, player.y + 20, 12, 22);
+  // Hair
+  ctx.fillStyle = "#3a241a";
+  ctx.beginPath();
+  ctx.arc(centerX, headY - 2, 12, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(centerX - 11, headY - 2, 22, 16);
 
-  ctx.fillStyle = player.exhausted ? "#a7d8b8" : "#f2bb9c";
+  // Head
+  ctx.fillStyle = faceTone;
   ctx.beginPath();
   ctx.arc(centerX, headY, 10, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "#ff6f61";
-  ctx.fillRect(player.x + 3, player.y + 34, 24, 24);
-
-  ctx.fillStyle = "#f7a9a0";
-  const bellyX = centerX + (player.facing === 1 ? 7 : -7);
+  // Eyes + mouth
+  ctx.fillStyle = "#2b1c0f";
   ctx.beginPath();
-  ctx.arc(bellyX, player.y + 47, bellyRadius, 0, Math.PI * 2);
+  ctx.arc(centerX - 3.5, headY - 1, 1.2, 0, Math.PI * 2);
+  ctx.arc(centerX + 3.5, headY - 1, 1.2, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = "#8c4a3a";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(centerX, headY + 4, 3, 0, Math.PI);
+  ctx.stroke();
 
-  ctx.strokeStyle = "#54281d";
+  // Neck
+  ctx.fillStyle = faceTone;
+  ctx.fillRect(centerX - 2, headY + 8, 4, 5);
+
+  // Dress top with folds
+  const dressGrad = ctx.createLinearGradient(player.x + 4, player.y + 30, player.x + 26, player.y + 56);
+  dressGrad.addColorStop(0, "#ff7b6f");
+  dressGrad.addColorStop(0.5, "#ff6a5f");
+  dressGrad.addColorStop(1, "#e9554c");
+  ctx.fillStyle = dressGrad;
+  ctx.fillRect(player.x + 4, player.y + 30, 22, 26);
+  ctx.strokeStyle = "rgba(140, 65, 58, 0.45)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(player.x + 8, player.y + 32);
+  ctx.lineTo(player.x + 10, player.y + 54);
+  ctx.moveTo(player.x + 16, player.y + 32);
+  ctx.lineTo(player.x + 14, player.y + 54);
+  ctx.stroke();
+
+  // Arms
+  ctx.strokeStyle = faceTone;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(player.x + 6, player.y + 36);
+  ctx.lineTo(player.x + 2, player.y + 46);
+  ctx.moveTo(player.x + 24, player.y + 36);
+  ctx.lineTo(player.x + 28, player.y + 46);
+  ctx.stroke();
+
+  // Belly as cloth bulge (minimal at level 1)
+  const bellyX = centerX + (player.facing === 1 ? 8 : -8);
+  const bellyY = player.y + 48;
+  const bellyGrad = ctx.createRadialGradient(
+    bellyX - 4,
+    bellyY - 4,
+    2,
+    bellyX,
+    bellyY,
+    bellyRadius + 6
+  );
+  bellyGrad.addColorStop(0, dressLight);
+  bellyGrad.addColorStop(0.55, dressBase);
+  bellyGrad.addColorStop(1, dressDark);
+  ctx.fillStyle = bellyGrad;
+  ctx.beginPath();
+  ctx.arc(bellyX, bellyY, bellyRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(120, 55, 75, 0.28)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(bellyX + 2, bellyY + 2, Math.max(2, bellyRadius - 2), -0.2, Math.PI * 0.8);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(bellyX - 3, bellyY - 3, Math.max(1, bellyRadius - 6), -0.2, Math.PI * 0.2);
+  ctx.stroke();
+
+  // Skirt with folds
+  const skirtGrad = ctx.createLinearGradient(player.x + 4, player.y + 52, player.x + 26, player.y + 66);
+  skirtGrad.addColorStop(0, dressLight);
+  skirtGrad.addColorStop(1, dressDark);
+  ctx.fillStyle = skirtGrad;
+  ctx.beginPath();
+  ctx.moveTo(player.x + 4, player.y + 52);
+  ctx.lineTo(player.x + 26, player.y + 52);
+  ctx.lineTo(player.x + 22, player.y + 64);
+  ctx.lineTo(player.x + 8, player.y + 64);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(140, 65, 58, 0.35)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(player.x + 9, player.y + 54);
+  ctx.lineTo(player.x + 10, player.y + 63);
+  ctx.moveTo(player.x + 17, player.y + 54);
+  ctx.lineTo(player.x + 16, player.y + 63);
+  ctx.stroke();
+
+  // Legs + shoes
+  ctx.strokeStyle = "#4c2b1d";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(player.x + 10, player.y + player.h - 2);
-  ctx.lineTo(player.x + 10, player.y + 56);
+  ctx.lineTo(player.x + 10, player.y + 58);
   ctx.moveTo(player.x + 20, player.y + player.h - 2);
-  ctx.lineTo(player.x + 20, player.y + 56);
+  ctx.lineTo(player.x + 20, player.y + 58);
   ctx.stroke();
+  ctx.fillStyle = "#2b1c0f";
+  ctx.fillRect(player.x + 6, player.y + player.h - 4, 8, 4);
+  ctx.fillRect(player.x + 16, player.y + player.h - 4, 8, 4);
 
   if (player.lastUseFx && player.lastUseFx.until > performance.now()) {
     const pillX = player.x + player.w + 6;
@@ -630,15 +727,58 @@ function drawFinishScene() {
   ctx.font = "bold 36px Verdana";
   ctx.fillText("The baby is born!", world.width / 2, 200);
 
-  ctx.fillStyle = "#f2bb9c";
+  const babyX = world.width / 2;
+  const babyY = 300;
+
+  // Blanket
+  const blanketGrad = ctx.createLinearGradient(babyX - 110, babyY + 40, babyX + 110, babyY + 120);
+  blanketGrad.addColorStop(0, "#ffe2b5");
+  blanketGrad.addColorStop(1, "#f4c68c");
+  ctx.fillStyle = blanketGrad;
   ctx.beginPath();
-  ctx.arc(world.width / 2, 300, 70, 0, Math.PI * 2);
+  ctx.ellipse(babyX, babyY + 80, 140, 60, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  // Head with shading
+  const headGrad = ctx.createRadialGradient(babyX - 18, babyY - 10, 8, babyX, babyY, 70);
+  headGrad.addColorStop(0, "#ffd8c4");
+  headGrad.addColorStop(0.6, "#f2bb9c");
+  headGrad.addColorStop(1, "#e2a789");
+  ctx.fillStyle = headGrad;
+  ctx.beginPath();
+  ctx.arc(babyX, babyY, 70, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hair curl
+  ctx.strokeStyle = "#5a3118";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(babyX - 18, babyY - 28, 10, 0.2, Math.PI * 1.4);
+  ctx.stroke();
+
+  // Eyes + mouth
+  ctx.fillStyle = "#2b1c0f";
+  ctx.beginPath();
+  ctx.arc(babyX - 18, babyY - 4, 4, 0, Math.PI * 2);
+  ctx.arc(babyX + 18, babyY - 4, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#b85a5a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(babyX, babyY + 16, 10, 0, Math.PI);
+  ctx.stroke();
+
+  // Swaddle
   ctx.fillStyle = "#ffd34f";
   ctx.beginPath();
-  ctx.arc(world.width / 2, 300, 45, 0, Math.PI * 2);
+  ctx.ellipse(babyX, babyY + 55, 85, 45, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = "rgba(170, 120, 35, 0.45)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(babyX - 60, babyY + 40);
+  ctx.lineTo(babyX + 60, babyY + 70);
+  ctx.stroke();
 
   ctx.fillStyle = "#5a3118";
   ctx.font = "bold 24px Verdana";
@@ -649,6 +789,10 @@ function drawFinishScene() {
 
 function render(time) {
   ctx.clearRect(0, 0, world.width, world.height);
+  if (DEBUG_SHOW_FINISH) {
+    drawFinishScene();
+    return;
+  }
 
   if (game.completed) {
     drawFinishScene();
