@@ -168,6 +168,60 @@ canvas {
   display: none;
 }
 
+.menu-card {
+  width: min(92vw, 460px);
+  background: #fff7ea;
+  border: 3px solid #8f5627;
+  border-radius: 18px;
+  padding: 1rem 1.2rem 1.2rem;
+  box-shadow: 0 14px 30px rgba(44, 24, 8, 0.35);
+  text-align: center;
+}
+
+.menu-panel {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.menu-panel h3 {
+  margin: 0.6rem 0 0.2rem;
+}
+
+.menu-panel p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.menu-panel.is-hidden {
+  display: none;
+}
+
+.menu-btn {
+  border: 2px solid #8f5627;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  font: 700 1rem "Trebuchet MS", "Verdana", sans-serif;
+  color: #3a220f;
+  background: #ffe9c9;
+  cursor: pointer;
+}
+
+.menu-btn-small {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.menu-btn:hover {
+  background: #ffd9a8;
+}
+
+.game-menu {
+  margin-top: 0.6rem;
+  display: none;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .shop-card {
   width: min(92vw, 420px);
   background: #fff7ea;
@@ -238,11 +292,11 @@ canvas {
   }
 
   .touch-controls {
-    display: grid;
+    display: none;
   }
 
   .touch-items {
-    display: grid;
+    display: none;
   }
 
   .hud {
@@ -257,4 +311,17 @@ canvas {
   .shop-card {
     width: min(92vw, 360px);
   }
+
+  .menu-card {
+    width: min(92vw, 360px);
+  }
+}
+
+body[data-screen="game"] .touch-controls,
+body[data-screen="game"] .touch-items {
+  display: grid;
+}
+
+body[data-screen="game"] .game-menu {
+  display: flex;
 }

@@ -27,6 +27,10 @@
         Pill 3
       </button>
     </div>
+    <div class="game-menu">
+      <button type="button" id="restartBtn" class="menu-btn menu-btn-small">Restart</button>
+      <button type="button" id="menuBtn" class="menu-btn menu-btn-small">Main Menu</button>
+    </div>
     <div class="hud">
       <span id="levelText">Level 1 / 9</span>
       <span id="crackersText">Crackers: 0</span>
@@ -51,6 +55,34 @@
       </div>
     </div>
   </main>
+  <div id="menuOverlay" class="overlay" aria-hidden="false">
+    <div class="menu-card" role="dialog" aria-labelledby="menuTitle">
+      <h2 id="menuTitle">Salty Crackers</h2>
+      <div id="menuMain" class="menu-panel">
+        <button type="button" id="playBtn" class="menu-btn">Play</button>
+        <button type="button" id="helpBtn" class="menu-btn">Help</button>
+        <button type="button" id="aboutBtn" class="menu-btn">About</button>
+        <button type="button" id="restartFromMenu" class="menu-btn">Restart</button>
+      </div>
+      <div id="menuHelp" class="menu-panel is-hidden">
+        <h3>Controls</h3>
+        <p>Move: Arrow Left / Right</p>
+        <p>Jump: Arrow Up (double jump)</p>
+        <p>Use pills: 1 (stamina), 2 (speed), 3 (no-stamina)</p>
+        <p>Touch: on-screen buttons for move, jump, and pills</p>
+        <h3>Items</h3>
+        <p>Stamina Pill: restores stamina</p>
+        <p>Speed Pill: removes belly speed penalty for 5s</p>
+        <p>No-Stamina Pill: no stamina drain for 5s</p>
+        <button type="button" id="backFromHelp" class="menu-btn">Back</button>
+      </div>
+      <div id="menuAbout" class="menu-panel is-hidden">
+        <p>Collect all crackers as fast as possible across 9 levels.</p>
+        <p>Each level grows the belly, affecting speed and jump.</p>
+        <button type="button" id="backFromAbout" class="menu-btn">Back</button>
+      </div>
+    </div>
+  </div>
   <div id="shopOverlay" class="overlay is-hidden" aria-hidden="true">
     <div class="shop-card" role="dialog" aria-labelledby="shopTitle">
       <h2 id="shopTitle">Level Complete</h2>

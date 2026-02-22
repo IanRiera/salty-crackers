@@ -15,6 +15,18 @@ const shopMessage = document.getElementById("shopMessage");
 const shopNext = document.getElementById("shopNext");
 const shopButtons = document.querySelectorAll(".shop-btn");
 const touchItemButtons = document.querySelectorAll(".touch-btn-item");
+const menuOverlay = document.getElementById("menuOverlay");
+const menuMain = document.getElementById("menuMain");
+const menuHelp = document.getElementById("menuHelp");
+const menuAbout = document.getElementById("menuAbout");
+const playBtn = document.getElementById("playBtn");
+const helpBtn = document.getElementById("helpBtn");
+const aboutBtn = document.getElementById("aboutBtn");
+const backFromHelp = document.getElementById("backFromHelp");
+const backFromAbout = document.getElementById("backFromAbout");
+const restartBtn = document.getElementById("restartBtn");
+const menuBtn = document.getElementById("menuBtn");
+const restartFromMenu = document.getElementById("restartFromMenu");
 
 const world = {
   gravity: 0.55,
@@ -78,6 +90,7 @@ const game = {
   rewardPending: false,
   speedBoostUntil: 0,
   noStaminaUntil: 0,
+  screen: "menu",
   inventory: {
     stamina: 0,
     speed: 0,
@@ -156,6 +169,7 @@ function createLevel(level) {
   player.jumpsRemaining = player.maxJumps;
   player.exhausted = false;
   player.stamina = player.staminaMax;
+  player.lastUseFx = null;
 
   game.levelStartMs = 0;
   game.levelElapsedMs = 0;
@@ -343,6 +357,7 @@ function collectCrackers(time) {
 
 function openShop() {
   if (!shopOverlay) return;
+  if (game.screen !== "game") return;
   if (game.inShop) return;
   if (game.rewardPending) {
     game.coins += 100;
@@ -432,6 +447,48 @@ function advanceLevel() {
   game.level += 1;
   createLevel(game.level);
   updateHUD();
+}
+
+function resetGameState() {
+  game.level = 1;
+  game.crackersCollected = 0;
+  game.crackersTarget = 0;
+  game.completed = false;
+  game.transitionTimer = 0;
+  game.levelStartMs = 0;
+  game.levelElapsedMs = 0;
+  game.coins = 0;
+  game.inShop = false;
+  game.rewardPending = false;
+  game.speedBoostUntil = 0;
+  game.noStaminaUntil = 0;
+  game.inventory.stamina = 0;
+  game.inventory.speed = 0;
+  game.inventory.nostamina = 0;
+  closeShop();
+  createLevel(game.level);
+  updateHUD();
+}
+
+function setScreen(screen) {
+  game.screen = screen;
+  document.body.dataset.screen = screen;
+  if (menuOverlay) {
+    if (screen === "game") {
+      menuOverlay.classList.add("is-hidden");
+      menuOverlay.setAttribute("aria-hidden", "true");
+    } else {
+      menuOverlay.classList.remove("is-hidden");
+      menuOverlay.setAttribute("aria-hidden", "false");
+    }
+  }
+}
+
+function showMenuPanel(panel) {
+  if (!menuMain || !menuHelp || !menuAbout) return;
+  menuMain.classList.toggle("is-hidden", panel !== "main");
+  menuHelp.classList.toggle("is-hidden", panel !== "help");
+  menuAbout.classList.toggle("is-hidden", panel !== "about");
 }
 
 function nextLevelIfReady() {
@@ -613,7 +670,7 @@ function gameLoop(time) {
   const delta = Math.min(64, time - game.lastFrameMs);
   game.lastFrameMs = time;
 
-  if (!game.completed) {
+  if (!game.completed && game.screen === "game") {
     if (!game.levelStartMs) {
       game.levelStartMs = time;
     }
@@ -672,6 +729,8 @@ bindTouchControls();
 loadBestTimes();
 createLevel(game.level);
 updateHUD();
+setScreen("menu");
+showMenuPanel("main");
 requestAnimationFrame(gameLoop);
 
 for (const button of shopButtons) {
@@ -697,5 +756,58 @@ for (const button of touchItemButtons) {
     if (item === "stamina") useStaminaPill();
     if (item === "speed") useSpeedPill();
     if (item === "nostamina") useNoStaminaPill();
+  });
+}
+
+if (playBtn) {
+  playBtn.addEventListener("click", () => {
+    showMenuPanel("main");
+    setScreen("game");
+  });
+}
+
+if (helpBtn) {
+  helpBtn.addEventListener("click", () => {
+    showMenuPanel("help");
+  });
+}
+
+if (aboutBtn) {
+  aboutBtn.addEventListener("click", () => {
+    showMenuPanel("about");
+  });
+}
+
+if (backFromHelp) {
+  backFromHelp.addEventListener("click", () => {
+    showMenuPanel("main");
+  });
+}
+
+if (backFromAbout) {
+  backFromAbout.addEventListener("click", () => {
+    showMenuPanel("main");
+  });
+}
+
+if (restartBtn) {
+  restartBtn.addEventListener("click", () => {
+    resetGameState();
+    setScreen("game");
+  });
+}
+
+if (menuBtn) {
+  menuBtn.addEventListener("click", () => {
+    showMenuPanel("main");
+    setScreen("menu");
+  });
+}
+
+if (restartFromMenu) {
+  restartFromMenu.addEventListener("click", () => {
+    resetGameState();
+    showMenuPanel("main");
+    setScreen("game");
   });
 }
