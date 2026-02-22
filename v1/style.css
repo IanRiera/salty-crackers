@@ -50,6 +50,13 @@ canvas {
   gap: 0.55rem;
 }
 
+.touch-items {
+  margin-top: 0.5rem;
+  display: none;
+  grid-template-columns: repeat(3, minmax(84px, 1fr));
+  gap: 0.55rem;
+}
+
 .touch-btn {
   border: 2px solid #8f5627;
   border-radius: 12px;
@@ -69,6 +76,11 @@ canvas {
 
 .touch-btn-jump {
   background: #ffd9b0;
+}
+
+.touch-btn-item {
+  background: #ffefdb;
+  font-size: 0.88rem;
 }
 
 .hud {
@@ -105,6 +117,109 @@ canvas {
   transition: width 120ms linear;
 }
 
+.coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.coin-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #a96a15;
+  background: radial-gradient(circle at 30% 30%, #ffe49f, #f2b13c);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.inventory {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pill {
+  width: 18px;
+  height: 10px;
+  border-radius: 999px;
+  border: 2px solid #7b4a2c;
+  background: linear-gradient(90deg, #ffffff 0 50%, #f2a6a6 50% 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.pill-speed {
+  background: linear-gradient(90deg, #ffffff 0 50%, #9fd0ff 50% 100%);
+}
+
+.pill-nostamina {
+  background: linear-gradient(90deg, #ffffff 0 50%, #b9a6ff 50% 100%);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 18, 9, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.overlay.is-hidden {
+  display: none;
+}
+
+.shop-card {
+  width: min(92vw, 420px);
+  background: #fff7ea;
+  border: 3px solid #8f5627;
+  border-radius: 18px;
+  padding: 1rem 1.2rem 1.2rem;
+  box-shadow: 0 14px 30px rgba(44, 24, 8, 0.35);
+  text-align: center;
+}
+
+.shop-card h2 {
+  margin: 0 0 0.35rem;
+}
+
+.shop-coins {
+  margin: 0.1rem 0 0.5rem;
+  font-weight: 700;
+}
+
+.shop-message {
+  min-height: 1.2rem;
+  margin: 0 0 0.7rem;
+  color: #7b3c15;
+}
+
+.shop-items {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.shop-btn,
+.shop-next {
+  border: 2px solid #8f5627;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  font: 700 0.98rem "Trebuchet MS", "Verdana", sans-serif;
+  color: #3a220f;
+  background: #ffe9c9;
+  cursor: pointer;
+}
+
+.shop-btn:hover,
+.shop-next:hover {
+  background: #ffd9a8;
+}
+
+.shop-next {
+  width: 100%;
+  background: #ffd1a1;
+}
+
 @media (max-width: 720px) {
   body {
     align-items: start;
@@ -126,6 +241,10 @@ canvas {
     display: grid;
   }
 
+  .touch-items {
+    display: grid;
+  }
+
   .hud {
     font-size: 0.9rem;
     gap: 0.5rem;
@@ -133,5 +252,9 @@ canvas {
 
   .stamina-bar {
     width: 110px;
+  }
+
+  .shop-card {
+    width: min(92vw, 360px);
   }
 }

@@ -3,8 +3,18 @@ const ctx = canvas.getContext("2d");
 
 const levelText = document.getElementById("levelText");
 const crackersText = document.getElementById("crackersText");
+const coinsValue = document.getElementById("coinsValue");
 const statusText = document.getElementById("statusText");
 const staminaBar = document.getElementById("staminaBar");
+const staminaPillCount = document.getElementById("staminaPillCount");
+const speedPillCount = document.getElementById("speedPillCount");
+const noStaminaPillCount = document.getElementById("nostaminaPillCount");
+const shopOverlay = document.getElementById("shopOverlay");
+const shopCoins = document.getElementById("shopCoins");
+const shopMessage = document.getElementById("shopMessage");
+const shopNext = document.getElementById("shopNext");
+const shopButtons = document.querySelectorAll(".shop-btn");
+const touchItemButtons = document.querySelectorAll(".touch-btn-item");
 
 const world = {
   gravity: 0.55,
@@ -63,6 +73,16 @@ const game = {
   levelElapsedMs: 0,
   lastFrameMs: 0,
   bestTimes: [],
+  coins: 0,
+  inShop: false,
+  rewardPending: false,
+  speedBoostUntil: 0,
+  noStaminaUntil: 0,
+  inventory: {
+    stamina: 0,
+    speed: 0,
+    nostamina: 0,
+  },
 };
 
 const player = {
@@ -175,6 +195,7 @@ function crackersTargetSafe(value) {
 function updateHUD() {
   levelText.textContent = `Level ${Math.min(game.level, game.totalLevels)} / ${game.totalLevels}`;
   crackersText.textContent = `Crackers: ${game.crackersCollected} / ${game.crackersTarget}`;
+  coinsValue.textContent = `${game.coins}`;
   const growthValue = 1 + (Math.min(game.level, game.totalLevels) - 1) * 0.16;
   const growth = growthValue.toFixed(2);
   const seconds = formatSeconds(game.levelElapsedMs);
@@ -186,24 +207,34 @@ function updateHUD() {
     staminaBar.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
   }
 
-  const speedScale = Math.max(0.55, 1.1 - (growthValue - 1) * 0.55);
+  const speedBoostActive = performance.now() < game.speedBoostUntil;
+  const speedScale = speedBoostActive
+    ? 1.1
+    : Math.max(0.55, 1.1 - (growthValue - 1) * 0.55);
   const jumpScale = Math.max(0.72, 1.0 - (growthValue - 1) * 0.55);
   player.speed = player.baseSpeed * speedScale;
   player.jumpPower = player.baseJumpPower * jumpScale;
+
+  if (staminaPillCount) staminaPillCount.textContent = `${game.inventory.stamina}`;
+  if (speedPillCount) speedPillCount.textContent = `${game.inventory.speed}`;
+  if (noStaminaPillCount) noStaminaPillCount.textContent = `${game.inventory.nostamina}`;
 }
 
 function tryJump() {
   if (player.exhausted) return;
   if (player.jumpsRemaining <= 0) return;
+  const noDrainActive = performance.now() < game.noStaminaUntil;
   const jumpIndex = player.maxJumps - player.jumpsRemaining + 1;
   const baseCost = 10;
   const cost = jumpIndex >= 2 ? baseCost * 2 : baseCost;
-  if (player.stamina < cost) return;
-  player.stamina = Math.max(0, player.stamina - cost);
+  if (!noDrainActive) {
+    if (player.stamina < cost) return;
+    player.stamina = Math.max(0, player.stamina - cost);
+  }
   player.vy = -player.jumpPower;
   player.onGround = false;
   player.jumpsRemaining -= 1;
-  if (player.stamina <= 0) {
+  if (!noDrainActive && player.stamina <= 0) {
     player.exhausted = true;
   }
 }
@@ -226,8 +257,9 @@ function updateStamina(deltaMs) {
   const drainRate = 12;
   const recoverRate = 10;
   const exhaustedRecoverRate = 18;
+  const noDrainActive = performance.now() < game.noStaminaUntil;
 
-  if (!player.exhausted && moving) {
+  if (!player.exhausted && moving && !noDrainActive) {
     player.stamina = Math.max(0, player.stamina - drainRate * delta);
   } else {
     const rate = player.exhausted ? exhaustedRecoverRate : recoverRate;
@@ -298,7 +330,8 @@ function collectCrackers(time) {
   }
 
   if (game.crackersCollected >= game.crackersTarget && game.transitionTimer <= 0) {
-    game.transitionTimer = 75;
+    game.transitionTimer = 60;
+    game.rewardPending = true;
     const idx = game.level - 1;
     const previous = game.bestTimes[idx];
     if (!previous || game.levelElapsedMs < previous) {
@@ -308,19 +341,105 @@ function collectCrackers(time) {
   }
 }
 
+function openShop() {
+  if (!shopOverlay) return;
+  if (game.inShop) return;
+  if (game.rewardPending) {
+    game.coins += 100;
+    game.rewardPending = false;
+  }
+  game.inShop = true;
+  setControlState("ArrowLeft", false);
+  setControlState("ArrowRight", false);
+  setControlState("ArrowUp", false);
+  shopOverlay.classList.remove("is-hidden");
+  shopOverlay.setAttribute("aria-hidden", "false");
+  shopCoins.textContent = `${game.coins}`;
+  shopMessage.textContent = "";
+  shopNext.textContent = game.level >= game.totalLevels ? "Finish" : "Next Level";
+}
+
+function closeShop() {
+  if (!shopOverlay) return;
+  shopOverlay.classList.add("is-hidden");
+  shopOverlay.setAttribute("aria-hidden", "true");
+  game.inShop = false;
+}
+
+function tryPurchase(item) {
+  if (item === "stamina") {
+    if (game.coins < 50) {
+      shopMessage.textContent = "Not enough coins.";
+      return;
+    }
+    game.coins -= 50;
+    game.inventory.stamina += 1;
+    shopMessage.textContent = "Stamina pill added.";
+  }
+
+  if (item === "speed") {
+    if (game.coins < 125) {
+      shopMessage.textContent = "Not enough coins.";
+      return;
+    }
+    game.coins -= 125;
+    game.inventory.speed += 1;
+    shopMessage.textContent = "Speed pill added.";
+  }
+
+  if (item === "nostamina") {
+    if (game.coins < 150) {
+      shopMessage.textContent = "Not enough coins.";
+      return;
+    }
+    game.coins -= 150;
+    game.inventory.nostamina += 1;
+    shopMessage.textContent = "No-stamina pill added.";
+  }
+
+  shopCoins.textContent = `${game.coins}`;
+  updateHUD();
+}
+
+function useStaminaPill() {
+  if (game.inventory.stamina <= 0) return;
+  game.inventory.stamina -= 1;
+  player.stamina = player.staminaMax;
+  player.exhausted = false;
+  player.lastUseFx = { type: "stamina", until: performance.now() + 450 };
+}
+
+function useSpeedPill() {
+  if (game.inventory.speed <= 0) return;
+  game.inventory.speed -= 1;
+  game.speedBoostUntil = performance.now() + 5000;
+  player.lastUseFx = { type: "speed", until: performance.now() + 450 };
+}
+
+function useNoStaminaPill() {
+  if (game.inventory.nostamina <= 0) return;
+  game.inventory.nostamina -= 1;
+  game.noStaminaUntil = performance.now() + 5000;
+  player.lastUseFx = { type: "nostamina", until: performance.now() + 450 };
+}
+
+function advanceLevel() {
+  if (game.level >= game.totalLevels) {
+    game.completed = true;
+    return;
+  }
+
+  game.level += 1;
+  createLevel(game.level);
+  updateHUD();
+}
+
 function nextLevelIfReady() {
   if (game.transitionTimer <= 0) return;
   game.transitionTimer -= 1;
 
   if (game.transitionTimer === 0) {
-    if (game.level >= game.totalLevels) {
-      game.completed = true;
-      return;
-    }
-
-    game.level += 1;
-    createLevel(game.level);
-    updateHUD();
+    openShop();
   }
 }
 
@@ -380,6 +499,29 @@ function drawPlayer() {
   ctx.moveTo(player.x + 20, player.y + player.h - 2);
   ctx.lineTo(player.x + 20, player.y + 56);
   ctx.stroke();
+
+  if (player.lastUseFx && player.lastUseFx.until > performance.now()) {
+    const pillX = player.x + player.w + 6;
+    const pillY = player.y + 20;
+    const w = 18;
+    const h = 10;
+    const r = h / 2;
+    const isSpeed = player.lastUseFx.type === "speed";
+    const isNoStamina = player.lastUseFx.type === "nostamina";
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#7b4a2c";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pillX + r, pillY + r, r, Math.PI / 2, Math.PI * 1.5);
+    ctx.arc(pillX + w - r, pillY + r, r, Math.PI * 1.5, Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = isNoStamina ? "#b9a6ff" : (isSpeed ? "#9fd0ff" : "#f2a6a6");
+    ctx.beginPath();
+    ctx.rect(pillX + w / 2, pillY, w / 2, h);
+    ctx.fill();
+  }
 }
 
 function drawLevelTransition() {
@@ -475,13 +617,15 @@ function gameLoop(time) {
     if (!game.levelStartMs) {
       game.levelStartMs = time;
     }
-    if (game.transitionTimer <= 0) {
+    if (game.transitionTimer <= 0 && !game.inShop) {
       game.levelElapsedMs += delta;
     }
-    updateStamina(delta);
-    handleInput();
-    applyPhysics();
-    collectCrackers(time);
+    if (!game.inShop) {
+      updateStamina(delta);
+      handleInput();
+      applyPhysics();
+      collectCrackers(time);
+    }
     nextLevelIfReady();
     updateHUD();
   }
@@ -494,6 +638,16 @@ window.addEventListener("keydown", (event) => {
   if (event.key in controls) {
     setControlState(event.key, true);
     event.preventDefault();
+  }
+
+  if (event.key === "1") {
+    useStaminaPill();
+  }
+  if (event.key === "2") {
+    useSpeedPill();
+  }
+  if (event.key === "3") {
+    useNoStaminaPill();
   }
 
   if (event.key === "ArrowUp") {
@@ -519,3 +673,29 @@ loadBestTimes();
 createLevel(game.level);
 updateHUD();
 requestAnimationFrame(gameLoop);
+
+for (const button of shopButtons) {
+  button.addEventListener("click", () => {
+    tryPurchase(button.dataset.item);
+  });
+}
+
+if (shopNext) {
+  shopNext.addEventListener("click", () => {
+    closeShop();
+    if (game.level >= game.totalLevels) {
+      game.completed = true;
+      return;
+    }
+    advanceLevel();
+  });
+}
+
+for (const button of touchItemButtons) {
+  button.addEventListener("click", () => {
+    const item = button.dataset.item;
+    if (item === "stamina") useStaminaPill();
+    if (item === "speed") useSpeedPill();
+    if (item === "nostamina") useNoStaminaPill();
+  });
+}
